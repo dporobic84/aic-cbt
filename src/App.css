@@ -1,0 +1,492 @@
+import React, { useMemo, useState } from "react";
+import "./index.css";
+
+const PASS_MARK = 80;
+const VALID_ANSWERS = ["YES", "NO", "UNSURE"];
+
+const DEMO_USERS = [
+  {
+    id: "u001",
+    name: "Officer Smith",
+    email: "officer.smith@airport.local",
+    password: "Training123",
+    role: "Officer",
+    department: "Staff Access Control"
+  },
+  {
+    id: "u002",
+    name: "Officer Murphy",
+    email: "officer.murphy@airport.local",
+    password: "Training123",
+    role: "Officer",
+    department: "Staff Access Control"
+  },
+  {
+    id: "admin001",
+    name: "Training Admin",
+    email: "admin@airport.local",
+    password: "Admin123",
+    role: "Admin",
+    department: "Security Training"
+  }
+];
+
+const LIVE_PHOTOS = {
+  maleOne: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=900&auto=format&fit=crop&crop=faces",
+  maleTwo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=900&auto=format&fit=crop&crop=faces",
+  maleThree: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=900&auto=format&fit=crop&crop=faces",
+  femaleOne: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=900&auto=format&fit=crop&crop=faces",
+  femaleTwo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=900&auto=format&fit=crop&crop=faces",
+  femaleThree: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=900&auto=format&fit=crop&crop=faces"
+};
+
+const PHOTO_STYLES = {
+  aic: { filter: "contrast(1.03) saturate(0.92)", objectPosition: "center top" },
+  live: { filter: "brightness(0.95) contrast(1.05) saturate(1.05)", objectPosition: "center center" },
+  lowQuality: { filter: "blur(4px) brightness(0.86) contrast(0.88)", objectPosition: "center center" },
+  older: { filter: "grayscale(0.18) contrast(1.08) brightness(0.96)", objectPosition: "center center" },
+  different: { filter: "contrast(1.08) saturate(0.95)", objectPosition: "center center" },
+  lowLight: { filter: "brightness(0.72) contrast(1.12) saturate(0.9)", objectPosition: "center center" }
+};
+
+const QUESTIONS = [
+  {
+    id: 1,
+    category: "Same Person",
+    difficulty: "Easy",
+    imageA: LIVE_PHOTOS.maleOne,
+    imageB: LIVE_PHOTOS.maleOne,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.live,
+    correct: "YES",
+    explanation: "Correct answer: YES. Same training image with different lighting/crop treatment. Focus on eye spacing, nose bridge, jawline and overall face shape."
+  },
+  {
+    id: 2,
+    category: "Different Person",
+    difficulty: "Medium",
+    imageA: LIVE_PHOTOS.maleOne,
+    imageB: LIVE_PHOTOS.maleTwo,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.different,
+    correct: "NO",
+    explanation: "Correct answer: NO. Similar age, hair or general presentation is not enough. Compare eye spacing, nose structure, mouth shape and jawline."
+  },
+  {
+    id: 3,
+    category: "Unclear Verification",
+    difficulty: "Hard",
+    imageA: LIVE_PHOTOS.maleThree,
+    imageB: LIVE_PHOTOS.maleThree,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.lowQuality,
+    correct: "UNSURE",
+    explanation: "Correct answer: UNSURE. If quality, lighting or angle prevents confident verification, slow the process and apply secondary verification."
+  },
+  {
+    id: 4,
+    category: "Different Similar Look",
+    difficulty: "Hard",
+    imageA: LIVE_PHOTOS.femaleOne,
+    imageB: LIVE_PHOTOS.femaleTwo,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.different,
+    correct: "NO",
+    explanation: "Correct answer: NO. Do not rely on hairstyle, clothing, skin tone or confidence. Compare stable facial features."
+  },
+  {
+    id: 5,
+    category: "Same Person Appearance Change",
+    difficulty: "Medium",
+    imageA: LIVE_PHOTOS.femaleOne,
+    imageB: LIVE_PHOTOS.femaleOne,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.older,
+    correct: "YES",
+    explanation: "Correct answer: YES. The photo treatment changed, but the stable facial structure remains consistent."
+  },
+  {
+    id: 6,
+    category: "Different Person",
+    difficulty: "Medium",
+    imageA: LIVE_PHOTOS.femaleThree,
+    imageB: LIVE_PHOTOS.femaleTwo,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.live,
+    correct: "NO",
+    explanation: "Correct answer: NO. Compare eyes, nose, mouth, chin and face shape rather than general presentation."
+  },
+  {
+    id: 7,
+    category: "Same Person Low Light",
+    difficulty: "Hard",
+    imageA: LIVE_PHOTOS.maleTwo,
+    imageB: LIVE_PHOTOS.maleTwo,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.lowLight,
+    correct: "YES",
+    explanation: "Correct answer: YES. Lighting changed, but the stable facial features still match."
+  },
+  {
+    id: 8,
+    category: "Unclear Verification",
+    difficulty: "Hard",
+    imageA: LIVE_PHOTOS.femaleThree,
+    imageB: LIVE_PHOTOS.femaleThree,
+    imageAStyle: PHOTO_STYLES.aic,
+    imageBStyle: PHOTO_STYLES.lowQuality,
+    correct: "UNSURE",
+    explanation: "Correct answer: UNSURE. If a live view is blurred or obstructed, the officer should not guess. Secondary verification is required."
+  }
+];
+
+const FEATURES = [
+  { title: "Eyes", text: "Shape, size, eye spacing", icon: "◉" },
+  { title: "Nose", text: "Shape, bridge, width", icon: "⌒" },
+  { title: "Mouth", text: "Shape, lip thickness", icon: "═" },
+  { title: "Jawline", text: "Shape, angle, definition", icon: "⌞⌟" },
+  { title: "Ears", text: "Shape, size, position", icon: "☊" },
+  { title: "Face Shape", text: "Overall structure", icon: "⬯" },
+  { title: "Distinctive Marks", text: "Moles, scars, marks", icon: "•" }
+];
+
+function calculateScore(answers) {
+  return answers.filter((answer) => answer.isCorrect).length;
+}
+
+function calculatePercentage(score, total) {
+  if (!total) return 0;
+  return Math.round((score / total) * 100);
+}
+
+function didPass(percentage) {
+  return percentage >= PASS_MARK;
+}
+
+function authenticateUser(email, password) {
+  return DEMO_USERS.find(
+    (user) => user.email.toLowerCase() === email.trim().toLowerCase() && user.password === password
+  );
+}
+
+function runSelfTests() {
+  const demoAnswers = [
+    { isCorrect: true },
+    { isCorrect: false },
+    { isCorrect: true },
+    { isCorrect: true },
+    { isCorrect: false }
+  ];
+  const score = calculateScore(demoAnswers);
+
+  return [
+    { name: "Score counts correct answers only", pass: score === 3 },
+    { name: "Percentage handles 3 out of 5 as 60%", pass: calculatePercentage(score, demoAnswers.length) === 60 },
+    { name: "Zero total returns 0% safely", pass: calculatePercentage(1, 0) === 0 },
+    { name: "80% is pass and 79% is fail", pass: didPass(80) === true && didPass(79) === false },
+    { name: "Question bank contains questions", pass: QUESTIONS.length > 0 },
+    { name: "Every answer key is valid", pass: QUESTIONS.every((question) => VALID_ANSWERS.includes(question.correct)) },
+    { name: "Known demo user can log in", pass: Boolean(authenticateUser("officer.smith@airport.local", "Training123")) },
+    { name: "Invalid password is rejected", pass: authenticateUser("officer.smith@airport.local", "wrong") === undefined }
+  ];
+}
+
+function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [email, setEmail] = useState("officer.smith@airport.local");
+  const [password, setPassword] = useState("Training123");
+  const [loginError, setLoginError] = useState("");
+  const [savedResults, setSavedResults] = useState([]);
+  const [started, setStarted] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [finished, setFinished] = useState(false);
+  const [showTests, setShowTests] = useState(false);
+
+  const current = QUESTIONS[index];
+  const selfTests = useMemo(() => runSelfTests(), []);
+  const score = useMemo(() => calculateScore(answers), [answers]);
+  const percentage = answers.length === QUESTIONS.length ? calculatePercentage(score, QUESTIONS.length) : 0;
+  const pass = didPass(percentage);
+  const userResults = currentUser ? savedResults.filter((result) => result.userId === currentUser.id) : [];
+
+  function handleLogin(event) {
+    event.preventDefault();
+    const matchedUser = authenticateUser(email, password);
+
+    if (!matchedUser) {
+      setLoginError("Invalid email or password. Try the demo credentials shown on this screen.");
+      return;
+    }
+
+    setCurrentUser(matchedUser);
+    setLoginError("");
+    setStarted(false);
+    setFinished(false);
+    setAnswers([]);
+    setSelected(null);
+    setIndex(0);
+  }
+
+  function logout() {
+    setCurrentUser(null);
+    setStarted(false);
+    setFinished(false);
+    setAnswers([]);
+    setSelected(null);
+    setIndex(0);
+    setLoginError("");
+  }
+
+  function startTraining() {
+    setStarted(true);
+    setIndex(0);
+    setSelected(null);
+    setAnswers([]);
+    setFinished(false);
+  }
+
+  function answerQuestion(value) {
+    if (selected) return;
+    setSelected(value);
+    setAnswers((previous) => [
+      ...previous,
+      {
+        questionId: current.id,
+        selected: value,
+        correct: current.correct,
+        isCorrect: value === current.correct,
+        category: current.category
+      }
+    ]);
+  }
+
+  function nextQuestion() {
+    if (index + 1 >= QUESTIONS.length) {
+      const finalScore = calculateScore(answers);
+      const finalPercentage = calculatePercentage(finalScore, QUESTIONS.length);
+      setSavedResults((previous) => [
+        {
+          id: `result-${Date.now()}`,
+          userId: currentUser?.id || "unknown",
+          userName: currentUser?.name || "Unknown User",
+          email: currentUser?.email || "unknown",
+          completedAt: new Date().toLocaleString(),
+          score: finalScore,
+          total: QUESTIONS.length,
+          percentage: finalPercentage,
+          pass: didPass(finalPercentage)
+        },
+        ...previous
+      ]);
+      setFinished(true);
+      return;
+    }
+
+    setIndex((previous) => previous + 1);
+    setSelected(null);
+  }
+
+  if (!currentUser) {
+    return (
+      <main className="app-shell">
+        <section className="login-layout">
+          <div className="hero-panel">
+            <div className="eyebrow">◆ Personalised Officer CBT</div>
+            <h1>AIC Facial Comparison Training</h1>
+            <p>Login allows the CBT to record each officer's individual score, completion date, pass/fail status and training history.</p>
+            <div className="demo-box">
+              <strong>Demo login credentials</strong>
+              <span>Officer: officer.smith@airport.local / Training123</span>
+              <span>Officer: officer.murphy@airport.local / Training123</span>
+              <span>Admin: admin@airport.local / Admin123</span>
+            </div>
+          </div>
+
+          <form className="login-card" onSubmit={handleLogin}>
+            <h2>Officer Login</h2>
+            <p>Enter your email and password to start personalised training.</p>
+
+            <label htmlFor="email">Email address</label>
+            <input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+
+            <label htmlFor="password">Password</label>
+            <input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+
+            {loginError && <div className="error-box">{loginError}</div>}
+
+            <button className="primary-btn" type="submit">Login</button>
+
+            <div className="info-box">
+              <strong>Future live version:</strong> connect this login to Microsoft SSO, Supabase Auth, Firebase Auth or your airport training identity provider.
+            </div>
+          </form>
+        </section>
+      </main>
+    );
+  }
+
+  if (!started) {
+    return (
+      <main className="app-shell">
+        <section className="start-layout">
+          <div className="hero-panel">
+            <div className="eyebrow">◆ Staff Access Officer CBT</div>
+            <h1>AIC Facial Comparison Training</h1>
+            <p>Welcome, <strong>{currentUser.name}</strong>. This personalised CBT records your individual result, completion date and pass/fail status.</p>
+            <div className="badge-row">
+              <span>{currentUser.role}</span>
+              <span>{currentUser.department}</span>
+              <span>{currentUser.email}</span>
+            </div>
+            <div className="button-row">
+              <button className="primary-light-btn" onClick={startTraining}>Start CBT</button>
+              <button className="outline-btn" onClick={logout}>Log Out</button>
+              <button className="outline-btn" onClick={() => setShowTests((previous) => !previous)}>{showTests ? "Hide Tests" : "Show Tests"}</button>
+            </div>
+
+            {showTests && (
+              <div className="test-box">
+                <h3>Built-in logic tests</h3>
+                {selfTests.map((test) => (
+                  <div className="test-row" key={test.name}>
+                    <span>{test.name}</span>
+                    <strong className={test.pass ? "pass-text" : "fail-text"}>{test.pass ? "PASS" : "FAIL"}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="profile-card">
+            <h2>Officer profile</h2>
+            <div className="profile-box">
+              <strong>{currentUser.name}</strong>
+              <span>{currentUser.email}</span>
+              <span>Role: {currentUser.role}</span>
+              <span>Department: {currentUser.department}</span>
+            </div>
+
+            {userResults.length > 0 && (
+              <div className="success-box">
+                <strong>Previous result:</strong> {userResults[0].percentage}% — {userResults[0].pass ? "PASS" : "RETAKE REQUIRED"}
+              </div>
+            )}
+
+            <h2>Officer comparison checklist</h2>
+            <ul className="simple-list">
+              {FEATURES.map((feature) => <li key={feature.title}>✓ {feature.title}: {feature.text}</li>)}
+            </ul>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (finished) {
+    return (
+      <main className="result-shell">
+        <section className="result-card">
+          <div className="result-header">
+            <div>
+              <h1>★ CBT Result</h1>
+              <p>AIC Facial Comparison Training completed by {currentUser.name}.</p>
+            </div>
+            <div className={pass ? "status-pass" : "status-fail"}>{pass ? "PASS" : "RETAKE REQUIRED"}</div>
+          </div>
+
+          <div className="stats-grid">
+            <div><strong>{percentage}%</strong><span>Final score</span></div>
+            <div><strong>{score}/{QUESTIONS.length}</strong><span>Correct answers</span></div>
+            <div><strong>{PASS_MARK}%</strong><span>Pass mark</span></div>
+          </div>
+
+          <div className="review-list">
+            {answers.map((answer, answerIndex) => (
+              <div className="review-row" key={`${answer.questionId}-${answerIndex}`}>
+                <div>
+                  <strong>Question {answerIndex + 1}</strong>
+                  <span>Selected: {answer.selected} | Correct: {answer.correct} | {answer.category}</span>
+                </div>
+                <b className={answer.isCorrect ? "pass-text" : "fail-text"}>{answer.isCorrect ? "✓" : "✕"}</b>
+              </div>
+            ))}
+          </div>
+
+          <div className="button-row">
+            <button className="primary-btn" onClick={startTraining}>↻ Restart Training</button>
+            <button className="secondary-btn" onClick={() => { setStarted(false); setFinished(false); }}>Back to Profile</button>
+            <button className="danger-btn" onClick={logout}>Log Out</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const isCorrect = selected === current.correct;
+  const progress = Math.round(((index + (selected ? 1 : 0)) / QUESTIONS.length) * 100);
+
+  return (
+    <main className="training-shell">
+      <section className="training-container">
+        <header className="training-header">
+          <div>
+            <h1>AIC Facial Comparison Training</h1>
+            <p>{currentUser.name} | Question {index + 1} of {QUESTIONS.length}</p>
+          </div>
+          <button className="save-btn" onClick={() => setStarted(false)}>Save & Exit</button>
+        </header>
+
+        <div className="progress-track"><div style={{ width: `${progress}%` }} /></div>
+
+        <div className="training-card">
+          <div className="image-area">
+            <div className="photo-panel">
+              <div className="photo-title">IMAGE A <span>AIC / ID PHOTO</span></div>
+              <img src={current.imageA} alt="AIC comparison example" style={current.imageAStyle} />
+            </div>
+
+            <div className="vs-badge">VS</div>
+
+            <div className="photo-panel">
+              <div className="photo-title">IMAGE B <span>LIVE / PERSON PHOTO</span></div>
+              <img src={current.imageB} alt="Live comparison example" style={current.imageBStyle} />
+            </div>
+          </div>
+
+          <aside className="features-panel">
+            <div className="features-title">KEY FEATURES TO COMPARE</div>
+            {FEATURES.map((feature) => (
+              <div className="feature-row" key={feature.title}>
+                <div className="feature-icon">{feature.icon}</div>
+                <div><strong>{feature.title}</strong><span>{feature.text}</span></div>
+              </div>
+            ))}
+          </aside>
+
+          <div className="question-panel">
+            <h2>IS THIS THE SAME PERSON?</h2>
+            <div className="answer-row">
+              <button className="answer yes" disabled={Boolean(selected)} onClick={() => answerQuestion("YES")}>✓ YES</button>
+              <button className="answer no" disabled={Boolean(selected)} onClick={() => answerQuestion("NO")}>✕ NO</button>
+              <button className="answer unsure" disabled={Boolean(selected)} onClick={() => answerQuestion("UNSURE")}>? UNSURE</button>
+            </div>
+          </div>
+
+          {selected && (
+            <div className={isCorrect ? "feedback correct" : "feedback incorrect"}>
+              <strong>{isCorrect ? "✓ Correct" : "✕ Incorrect"}</strong>
+              <p>{current.explanation}</p>
+              <button className="primary-btn" onClick={nextQuestion}>{index + 1 >= QUESTIONS.length ? "Finish CBT" : "Next Question"}</button>
+            </div>
+          )}
+        </div>
+
+        <div className="bottom-tip">💡 Focus on stable facial features. Do not rely on hair, facial hair, glasses or lighting.</div>
+      </section>
+    </main>
+  );
+}
+
+export default App;
