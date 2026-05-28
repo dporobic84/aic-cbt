@@ -112,90 +112,39 @@ const DEMO_USERS = [
   },
 ];
 
-const QUESTIONS = [
-  {
-    id: 1,
-    category: "Easy YES",
-    difficulty: "Easy",
-    imageA: "/images/easy/yes/question-01-a.png",
-    imageB: "/images/easy/yes/question-01-b.png",
-    correct: "YES",
-    explanation: "Correct answer: YES. Same person with minor environmental differences.",
-  },
-  {
-    id: 2,
-    category: "Easy YES",
-    difficulty: "Easy",
-    imageA: "/images/easy/yes/question-02-a.png",
-    imageB: "/images/easy/yes/question-02-b.png",
-    correct: "YES",
-    explanation: "Correct answer: YES. Stable facial features match.",
-  },
-  {
-    id: 3,
-    category: "Easy NO",
-    difficulty: "Easy",
-    imageA: "/images/easy/no/question-01-a.png",
-    imageB: "/images/easy/no/question-01-b.png",
-    correct: "NO",
-    explanation: "Correct answer: NO. These are different people.",
-  },
-  {
-    id: 4,
-    category: "Easy NO",
-    difficulty: "Easy",
-    imageA: "/images/easy/no/question-02-a.png",
-    imageB: "/images/easy/no/question-02-b.png",
-    correct: "NO",
-    explanation: "Correct answer: NO. Clear facial structure differences are visible.",
-  },
-  {
-    id: 5,
-    category: "Easy NO",
-    difficulty: "Easy",
-    imageA: "/images/easy/no/question-03-a.png",
-    imageB: "/images/easy/no/question-03-b.png",
-    correct: "NO",
-    explanation: "Correct answer: NO. Compare eyes, nose, jawline and face shape.",
-  },
-  {
-    id: 6,
-    category: "Medium YES",
-    difficulty: "Medium",
-    imageA: "/images/medium/yes/question-01-a.png",
-    imageB: "/images/medium/yes/question-01-b.png",
-    correct: "YES",
-    explanation: "Correct answer: YES. Same person with changed environment and lighting.",
-  },
-  {
-    id: 7,
-    category: "Medium NO",
-    difficulty: "Medium",
-    imageA: "/images/medium/no/question-01-a.png",
-    imageB: "/images/medium/no/question-01-b.png",
-    correct: "NO",
-    explanation: "Correct answer: NO. Similar appearance, but stable features differ.",
-  },
-  {
-    id: 8,
-    category: "Hard YES",
-    difficulty: "Hard",
-    imageA: "/images/hard/yes/question-01-a.png",
-    imageB: "/images/hard/yes/question-01-b.png",
-    correct: "YES",
-    explanation: "Correct answer: YES. Difficult match, but stable facial features align.",
-  },
-  {
-    id: 9,
-    category: "Hard NO",
-    difficulty: "Hard",
-    imageA: "/images/hard/no/question-01-a.png",
-    imageB: "/images/hard/no/question-01-b.png",
-    correct: "NO",
-    explanation: "Correct answer: NO. Similar-looking but different people.",
-  },
+const QUESTION_BANK = [
+  ...Array.from({ length: 10 }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      id: i + 1,
+      category: "Easy YES",
+      difficulty: "Easy",
+      imageA: `/images/easy/yes/question-${n}-a.png`,
+      imageB: `/images/easy/yes/question-${n}-b.png`,
+      correct: "YES",
+      explanation: "Correct answer: YES. Same person. Compare stable facial features.",
+    };
+  }),
+
+  ...Array.from({ length: 10 }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      id: i + 11,
+      category: "Easy NO",
+      difficulty: "Easy",
+      imageA: `/images/easy/no/question-${n}-a.png`,
+      imageB: `/images/easy/no/question-${n}-b.png`,
+      correct: "NO",
+      explanation: "Correct answer: NO. Different people. Compare eyes, nose, jawline and face shape.",
+    };
+  }),
 ];
 
+function shuffleArray(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+
+const QUESTIONS = shuffleArray(QUESTION_BANK).slice(0, 10);
 const FEATURES = [
   { title: "Eyes", text: "Shape, size, eye spacing", icon: "◉" },
   { title: "Nose", text: "Shape, bridge, width", icon: "⌒" },
@@ -314,7 +263,6 @@ function App() {
   const [answers, setAnswers] = useState([]);
   const [finished, setFinished] = useState(false);
   const [showTests, setShowTests] = useState(false);
-  const [showImagePaths, setShowImagePaths] = useState(false);
 
   const current = QUESTIONS[index];
   const selfTests = useMemo(() => runSelfTests(), []);
@@ -639,7 +587,7 @@ function App() {
             <div>
               <h1>AIC Facial Comparison Training</h1>
               <p>
-                {currentUser.name} | Question {index + 1} of {QUESTIONS.length} | {current.difficulty} | {current.category}
+                {currentUser.name} | Question {index + 1} of {QUESTIONS.length}
               </p>
             </div>
 
@@ -659,7 +607,7 @@ function App() {
                   IMAGE A <span>AIC / ID PHOTO</span>
                 </div>
                 <ImageWithFallback src={current.imageA} alt="AIC comparison example" />
-                {showImagePaths && <div className="image-path">{current.imageA}</div>}
+             
               </div>
 
               <div className="vs-badge">VS</div>
@@ -669,7 +617,7 @@ function App() {
                   IMAGE B <span>LIVE / PERSON PHOTO</span>
                 </div>
                 <ImageWithFallback src={current.imageB} alt="Live environment comparison" />
-                {showImagePaths && <div className="image-path">{current.imageB}</div>}
+                
               </div>
             </div>
 
@@ -732,11 +680,10 @@ function App() {
           <div className="bottom-tip">
             💡 Focus on stable facial features. Do not rely on hair, facial hair,
             glasses, clothing or lighting.
-            <br />
-            <button className="outline-btn" style={{ marginTop: 12 }} onClick={() => setShowImagePaths((previous) => !previous)}>
-              {showImagePaths ? "Hide image paths" : "Show image paths"}
-            </button>
-          </div>
+            </div>
+            
+             
+       
         </section>
       </main>
     </>
