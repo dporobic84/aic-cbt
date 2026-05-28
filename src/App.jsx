@@ -144,7 +144,10 @@ function shuffleArray(array) {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
-const QUESTIONS = shuffleArray(QUESTION_BANK).slice(0, 10);
+function createRandomQuestions() {
+  return shuffleArray(QUESTION_BANK).slice(0, 10);
+}
+
 const FEATURES = [
   { title: "Eyes", text: "Shape, size, eye spacing", icon: "◉" },
   { title: "Nose", text: "Shape, bridge, width", icon: "⌒" },
@@ -202,16 +205,20 @@ function runSelfTests() {
       pass: didPass(80) === true && didPass(79) === false,
     },
     {
-      name: "Question bank contains 9 questions",
-      pass: QUESTIONS.length === 9,
+      name: "Question bank contains 20 questions",
+      pass: QUESTION_BANK.length === 20,
+    },
+    {
+      name: "Random CBT session contains 10 questions",
+      pass: createRandomQuestions().length === 10,
     },
     {
       name: "Every answer key is valid",
-      pass: QUESTIONS.every((question) => VALID_ANSWERS.includes(question.correct)),
+      pass: QUESTION_BANK.every((question) => VALID_ANSWERS.includes(question.correct)),
     },
     {
       name: "Every image path points to public/images",
-      pass: QUESTIONS.every((question) => question.imageA.startsWith("/images/") && question.imageB.startsWith("/images/")),
+      pass: QUESTION_BANK.every((question) => question.imageA.startsWith("/images/") && question.imageB.startsWith("/images/")),
     },
     {
       name: "Known demo user can log in",
@@ -263,13 +270,14 @@ function App() {
   const [answers, setAnswers] = useState([]);
   const [finished, setFinished] = useState(false);
   const [showTests, setShowTests] = useState(false);
+  const [questions, setQuestions] = useState(() => createRandomQuestions());
 
-  const current = QUESTIONS[index];
+  const current = questions[index];
   const selfTests = useMemo(() => runSelfTests(), []);
   const score = useMemo(() => calculateScore(answers), [answers]);
   const percentage =
-    answers.length === QUESTIONS.length
-      ? calculatePercentage(score, QUESTIONS.length)
+    answers.length === questions.length
+      ? calculatePercentage(score, questions.length)
       : 0;
   const pass = didPass(percentage);
   const userResults = currentUser
@@ -293,6 +301,7 @@ function App() {
     setAnswers([]);
     setSelected(null);
     setIndex(0);
+    setQuestions(createRandomQuestions());
   }
 
   function logout() {
@@ -306,6 +315,7 @@ function App() {
   }
 
   function startTraining() {
+    setQuestions(createRandomQuestions());
     setStarted(true);
     setIndex(0);
     setSelected(null);
@@ -331,9 +341,9 @@ function App() {
   }
 
   function nextQuestion() {
-    if (index + 1 >= QUESTIONS.length) {
+    if (index + 1 >= questions.length) {
       const finalScore = calculateScore(answers);
-      const finalPercentage = calculatePercentage(finalScore, QUESTIONS.length);
+      const finalPercentage = calculatePercentage(finalScore, questions.length);
 
       setSavedResults((previous) => [
         {
@@ -343,7 +353,7 @@ function App() {
           email: currentUser?.email || "unknown",
           completedAt: new Date().toLocaleString(),
           score: finalScore,
-          total: QUESTIONS.length,
+          total: questions.length,
           percentage: finalPercentage,
           pass: didPass(finalPercentage),
         },
@@ -523,7 +533,7 @@ function App() {
               </div>
               <div>
                 <strong>
-                  {score}/{QUESTIONS.length}
+                  {score}/{questions.length}
                 </strong>
                 <span>Correct answers</span>
               </div>
@@ -539,8 +549,7 @@ function App() {
                   <div>
                     <strong>Question {answerIndex + 1}</strong>
                     <span>
-                      Selected: {answer.selected} | Correct: {answer.correct} |{" "}
-                      {answer.category}
+                      Selected: {answer.selected} | Correct: {answer.correct}
                     </span>
                   </div>
 
@@ -575,7 +584,7 @@ function App() {
   }
 
   const isCorrect = selected === current.correct;
-  const progress = Math.round(((index + (selected ? 1 : 0)) / QUESTIONS.length) * 100);
+  const progress = Math.round(((index + (selected ? 1 : 0)) / questions.length) * 100);
 
   return (
     <>
@@ -587,7 +596,7 @@ function App() {
             <div>
               <h1>AIC Facial Comparison Training</h1>
               <p>
-                {currentUser.name} | Question {index + 1} of {QUESTIONS.length}
+                {currentUser.name} | Question {index + 1} of {questions.length}
               </p>
             </div>
 
@@ -671,7 +680,7 @@ function App() {
                 <p>{current.explanation}</p>
 
                 <button className="primary-btn" onClick={nextQuestion}>
-                  {index + 1 >= QUESTIONS.length ? "Finish CBT" : "Next Question"}
+                  {index + 1 >= questions.length ? "Finish CBT" : "Next Question"}
                 </button>
               </div>
             )}
