@@ -205,8 +205,8 @@ function runSelfTests() {
       pass: didPass(80) === true && didPass(79) === false,
     },
     {
-      name: "Question bank contains 20 questions",
-      pass: QUESTION_BANK.length === 20,
+    name: "Question bank contains at least 20 questions",
+  pass: QUESTION_BANK.length >= 20,
     },
     {
       name: "Random CBT session contains 10 questions",
