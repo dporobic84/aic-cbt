@@ -153,6 +153,15 @@ const QUESTION_BANK = [
   }),
 ];
 
+
+function shuffleArray(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+
+function createRandomQuestions() {
+  return shuffleArray(QUESTION_BANK).slice(0, 10);
+}
+
 const FEATURES = [
   { title: "Eyes", text: "Shape, size, eye spacing", icon: "◉" },
   { title: "Nose", text: "Shape, bridge, width", icon: "⌒" },
