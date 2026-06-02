@@ -129,7 +129,7 @@ const QUESTION_BANK = [
   ...Array.from({ length: 20 }, (_, i) => {
     const n = String(i + 1).padStart(2, "0");
     return {
-      id: i + 11,
+      id: i + 101,
       category: "Easy NO",
       difficulty: "Easy",
       imageA: `/images/easy/no/question-${n}-a.png`,
@@ -138,15 +138,20 @@ const QUESTION_BANK = [
       explanation: "Correct answer: NO. Different people. Compare eyes, nose, jawline and face shape.",
     };
   }),
+
+  ...Array.from({ length: 21 }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      id: i + 301,
+      category: "Medium NO",
+      difficulty: "Medium",
+      imageA: `/images/medium/no/question-${n}-a.png`,
+      imageB: `/images/medium/no/question-${n}-b.png`,
+      correct: "NO",
+      explanation: "Correct answer: NO. Similar appearance, but stable facial features differ.",
+    };
+  }),
 ];
-
-function shuffleArray(array) {
-  return [...array].sort(() => Math.random() - 0.5);
-}
-
-function createRandomQuestions() {
-  return shuffleArray(QUESTION_BANK).slice(0, 10);
-}
 
 const FEATURES = [
   { title: "Eyes", text: "Shape, size, eye spacing", icon: "◉" },
