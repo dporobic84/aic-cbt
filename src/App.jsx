@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const PASS_MARK = 80;
+const PASS_MARK = 85;
 const VALID_ANSWERS = ["YES", "NO", "UNSURE"];
 
 const APP_CSS = `
@@ -187,12 +187,8 @@ function calculateAnswerPoints(answer) {
     return 1;
   }
 
-  if (answer.selected === "UNSURE" && answer.correct === "YES") {
+  if (answer.selected === "UNSURE" && answer.difficulty === "Medium") {
     return 0.5;
-  }
-
-  if (answer.isCorrect) {
-    return 1;
   }
 
   return 0;
@@ -229,28 +225,29 @@ function authenticateUser(email, password) {
 
 function runSelfTests() {
   const demoAnswers = [
-    { selected: "YES", correct: "YES" },
-    { selected: "NO", correct: "YES" },
-    { selected: "UNSURE", correct: "YES" },
-    { selected: "UNSURE", correct: "NO" },
-    { selected: "NO", correct: "NO" },
+    { selected: "YES", correct: "YES", difficulty: "Easy" },
+    { selected: "NO", correct: "YES", difficulty: "Easy" },
+    { selected: "UNSURE", correct: "YES", difficulty: "Easy" },
+    { selected: "UNSURE", correct: "NO", difficulty: "Medium" },
+    { selected: "UNSURE", correct: "YES", difficulty: "Medium" },
+    { selected: "NO", correct: "NO", difficulty: "Medium" },
   ];
 
   const score = calculateScore(demoAnswers);
 
   return [
-    { name: "Score gives full and partial credit correctly", pass: score === 2.5 },
+    { name: "Score gives full, zero and medium PIN CHECK credit correctly", pass: score === 2.5 },
     {
-      name: "Percentage handles 2.5 out of 5 as 50%",
-      pass: calculatePercentage(score, demoAnswers.length) === 50,
+      name: "Percentage handles 2.5 out of 6 correctly",
+      pass: calculatePercentage(score, demoAnswers.length) === 41.7,
     },
     {
       name: "Zero total returns 0% safely",
       pass: calculatePercentage(1, 0) === 0,
     },
     {
-      name: "80% is pass and 79% is fail",
-      pass: didPass(80) === true && didPass(79) === false,
+      name: "85% is pass and 84.9% is fail",
+      pass: didPass(85) === true && didPass(84.9) === false,
     },
     {
     name: "Question bank contains at least 20 questions",
@@ -384,13 +381,14 @@ function App() {
         correct: current.correct,
         isCorrect: value === current.correct,
         category: current.category,
+        difficulty: current.difficulty,
         imageA: current.imageA,
         imageB: current.imageB,
         explanation: current.explanation,
         points:
           value === current.correct
             ? 1
-            : value === "UNSURE" && current.correct === "YES"
+            : value === "UNSURE" && current.difficulty === "Medium"
               ? 0.5
               : 0,
       },
@@ -675,7 +673,7 @@ function App() {
   }
 
   const isCorrect = selected === current.correct;
-  const isPartial = selected === "UNSURE" && current.correct === "YES";
+  const isPartial = selected === "UNSURE" && current.difficulty === "Medium";
   const progress = Math.round(((index + (selected ? 1 : 0)) / questions.length) * 100);
 
   return (
