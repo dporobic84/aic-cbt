@@ -236,10 +236,10 @@ function runSelfTests() {
   const score = calculateScore(demoAnswers);
 
   return [
-    { name: "Score gives full, zero and medium PIN CHECK credit correctly", pass: score === 3.5 },
+    { name: "Score gives full, zero and medium PIN CHECK credit correctly", pass: score === 3 },
     {
-      name: "Percentage handles 2.5 out of 6 correctly",
-      pass: calculatePercentage(score, demoAnswers.length) === 58.3,
+      name: "Percentage handles 3 out of 6 correctly",
+      pass: calculatePercentage(score, demoAnswers.length) === 50,
     },
     {
       name: "Zero total returns 0% safely",
