@@ -159,7 +159,7 @@ function shuffleArray(array) {
 }
 
 function createRandomQuestions() {
-  return shuffleArray(QUESTION_BANK).slice(0, 10);
+  return shuffleArray(QUESTION_BANK).slice(0, 20);
 }
 
 const FEATURES = [
