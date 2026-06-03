@@ -69,10 +69,18 @@ input{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:14px;margin
 .stats-grid div{background:#f1f5f9;border-radius:18px;padding:24px;text-align:center}
 .stats-grid strong{display:block;font-size:42px}
 .stats-grid span{color:#64748b}
-.review-row{display:flex;justify-content:space-between;gap:16px;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px}
+.review-row{display:block;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px}
+.review-row-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
 .review-row span{display:block;color:#64748b}
+.failed-review{margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}
+.failed-review h4{margin:0 0 10px;color:#991b1b}
+.failed-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.failed-review-panel strong{display:block;margin-bottom:8px;color:#0f172a}
+.failed-review-panel img{width:100%;height:300px;object-fit:cover;object-position:center top;border-radius:12px;border:1px solid #cbd5e1;background:#e2e8f0}
+.failed-review p{margin:12px 0 0;color:#334155;line-height:1.45}
 .pass-text{color:#16a34a}
 .fail-text{color:#dc2626}
+.partial-text{color:#ca8a04}
 .test-row{display:flex;justify-content:space-between}
 @media(max-width:1100px){
 .login-layout,.start-layout,.training-card,.image-area{grid-template-columns:1fr}
@@ -82,6 +90,8 @@ input{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:14px;margin
 .answer-row,.stats-grid{grid-template-columns:1fr}
 .hero-panel h1,.training-header h1{font-size:36px}
 .photo-panel img{height:360px}
+.failed-review-grid{grid-template-columns:1fr}
+.failed-review-panel img{height:260px}
 }
 `;
 
@@ -172,13 +182,37 @@ const FEATURES = [
   { title: "Distinctive Marks", text: "Moles, scars, marks", icon: "•" },
 ];
 
+function calculateAnswerPoints(answer) {
+  if (answer.selected === answer.correct) {
+    return 1;
+  }
+
+  if (answer.selected === "UNSURE" && answer.correct === "YES") {
+    return 0.5;
+  }
+
+  if (answer.isCorrect) {
+    return 1;
+  }
+
+  return 0;
+}
+
 function calculateScore(answers) {
-  return answers.filter((answer) => answer.isCorrect).length;
+  return answers.reduce((total, answer) => total + calculateAnswerPoints(answer), 0);
 }
 
 function calculatePercentage(score, total) {
   if (!total) return 0;
-  return Math.round((score / total) * 100);
+  return Number(((score / total) * 100).toFixed(1));
+}
+
+function displayAnswer(value) {
+  return value === "UNSURE" ? "PIN CHECK" : value;
+}
+
+function formatScore(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function didPass(percentage) {
@@ -195,20 +229,20 @@ function authenticateUser(email, password) {
 
 function runSelfTests() {
   const demoAnswers = [
-    { isCorrect: true },
-    { isCorrect: false },
-    { isCorrect: true },
-    { isCorrect: true },
-    { isCorrect: false },
+    { selected: "YES", correct: "YES" },
+    { selected: "NO", correct: "YES" },
+    { selected: "UNSURE", correct: "YES" },
+    { selected: "UNSURE", correct: "NO" },
+    { selected: "NO", correct: "NO" },
   ];
 
   const score = calculateScore(demoAnswers);
 
   return [
-    { name: "Score counts correct answers only", pass: score === 3 },
+    { name: "Score gives full and partial credit correctly", pass: score === 2.5 },
     {
-      name: "Percentage handles 3 out of 5 as 60%",
-      pass: calculatePercentage(score, demoAnswers.length) === 60,
+      name: "Percentage handles 2.5 out of 5 as 50%",
+      pass: calculatePercentage(score, demoAnswers.length) === 50,
     },
     {
       name: "Zero total returns 0% safely",
@@ -223,8 +257,8 @@ function runSelfTests() {
   pass: QUESTION_BANK.length >= 20,
     },
     {
-      name: "Random CBT session contains 10 questions",
-      pass: createRandomQuestions().length === 10,
+      name: "Random CBT session contains 20 questions",
+      pass: createRandomQuestions().length === 20,
     },
     {
       name: "Every answer key is valid",
@@ -350,6 +384,15 @@ function App() {
         correct: current.correct,
         isCorrect: value === current.correct,
         category: current.category,
+        imageA: current.imageA,
+        imageB: current.imageB,
+        explanation: current.explanation,
+        points:
+          value === current.correct
+            ? 1
+            : value === "UNSURE" && current.correct === "YES"
+              ? 0.5
+              : 0,
       },
     ]);
   }
@@ -547,7 +590,7 @@ function App() {
               </div>
               <div>
                 <strong>
-                  {score}/{questions.length}
+                  {formatScore(score)}/{questions.length}
                 </strong>
                 <span>Correct answers</span>
               </div>
@@ -560,16 +603,50 @@ function App() {
             <div className="review-list">
               {answers.map((answer, answerIndex) => (
                 <div className="review-row" key={`${answer.questionId}-${answerIndex}`}>
-                  <div>
-                    <strong>Question {answerIndex + 1}</strong>
-                    <span>
-                      Selected: {answer.selected} | Correct: {answer.correct}
-                    </span>
+                  <div className="review-row-header">
+                    <div>
+                      <strong>Question {answerIndex + 1}</strong>
+                      <span>
+                        Selected: {displayAnswer(answer.selected)} | Correct: {answer.correct} | Points: {formatScore(answer.points ?? calculateAnswerPoints(answer))}
+                      </span>
+                    </div>
+
+                    <b
+                      className={
+                        (answer.points ?? calculateAnswerPoints(answer)) === 1
+                          ? "pass-text"
+                          : (answer.points ?? calculateAnswerPoints(answer)) === 0.5
+                            ? "partial-text"
+                            : "fail-text"
+                      }
+                    >
+                      {(answer.points ?? calculateAnswerPoints(answer)) === 1
+                        ? "✓"
+                        : (answer.points ?? calculateAnswerPoints(answer)) === 0.5
+                          ? "½"
+                          : "✕"}
+                    </b>
                   </div>
 
-                  <b className={answer.isCorrect ? "pass-text" : "fail-text"}>
-                    {answer.isCorrect ? "✓" : "✕"}
-                  </b>
+                  {(answer.points ?? calculateAnswerPoints(answer)) < 1 && (
+                    <div className="failed-review">
+                      <h4>{(answer.points ?? calculateAnswerPoints(answer)) === 0.5 ? "Review PIN CHECK decision" : "Review incorrect decision"}</h4>
+
+                      <div className="failed-review-grid">
+                        <div className="failed-review-panel">
+                          <strong>Image A — AIC / ID Photo</strong>
+                          <img src={answer.imageA} alt={`Question ${answerIndex + 1} AIC review`} />
+                        </div>
+
+                        <div className="failed-review-panel">
+                          <strong>Image B — Live / Person Photo</strong>
+                          <img src={answer.imageB} alt={`Question ${answerIndex + 1} live review`} />
+                        </div>
+                      </div>
+
+                      <p>{answer.explanation}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -598,6 +675,7 @@ function App() {
   }
 
   const isCorrect = selected === current.correct;
+  const isPartial = selected === "UNSURE" && current.correct === "YES";
   const progress = Math.round(((index + (selected ? 1 : 0)) / questions.length) * 100);
 
   return (
@@ -683,14 +761,20 @@ function App() {
                   disabled={Boolean(selected)}
                   onClick={() => answerQuestion("UNSURE")}
                 >
-                  ? UNSURE
+                  🔎 PIN CHECK
                 </button>
               </div>
             </div>
 
             {selected && (
-              <div className={isCorrect ? "feedback correct" : "feedback incorrect"}>
-                <strong>{isCorrect ? "✓ Correct" : "✕ Incorrect"}</strong>
+              <div className={isCorrect || isPartial ? "feedback correct" : "feedback incorrect"}>
+                <strong>
+                  {isCorrect
+                    ? "✓ Correct — 1 point"
+                    : isPartial
+                      ? "🔎 PIN CHECK — 0.5 point"
+                      : "✕ Incorrect — 0 points"}
+                </strong>
                 <p>{current.explanation}</p>
 
                 <button className="primary-btn" onClick={nextQuestion}>
